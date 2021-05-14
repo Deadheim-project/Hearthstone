@@ -86,7 +86,7 @@ namespace BossControll
       this.harmony.PatchAll();
     }
 
-    public static bool CheckBossAccess(string bossPlace, OfferingBowl __instance, Humanoid user)
+    public static bool isBossEnabled(string bossPlace, OfferingBowl __instance, Humanoid user)
     {
       foreach (AntiRush.ControlBossConfig boss in AntiRush.bossList)
       {
@@ -97,17 +97,17 @@ namespace BossControll
           {
             Debug.Log((object) "Yes he is entering in exeption");
             ((Character) user).Message((MessageHud.MessageType) 2, string.Format("O {0} só pode ser invocado em {1} / {2} dias!", (object) boss.NameTranslate, (object) AntiRush.currentDay, (object) num), 0, (Sprite) null);
-            return true;
+            return false;
           }
         }
         else if (AntiRush.currentDay < boss.Days && bossPlace == boss.PlaceName)
         {
           Debug.Log((object) "Yes he is entering in exeption");
           ((Character) user).Message((MessageHud.MessageType) 2, string.Format("O {0} só pode ser invocado em {1} / {2} dias!", (object) boss.NameTranslate, (object) AntiRush.currentDay, (object) boss.Days), 0, (Sprite) null);
-          return true;
+          return false;
         }
       }
-      return false;
+      return true;
     }
 
     public class ControlBossConfig
@@ -142,7 +142,7 @@ namespace BossControll
         Debug.Log((object) string.Format("Current day is: {0}", (object) AntiRush.currentDay));
         Debug.Log((object) ("Current boss is: " + Localization.instance.Localize((string) __instance.m_name)));
         Debug.Log((object) ("Current boss altar name: " + (string) __instance.m_name));
-        return AntiRush.CheckBossAccess((string) __instance.m_name, __instance, user);
+        return AntiRush.isBossEnabled((string) __instance.m_name, __instance, user);
       }
     }
 
@@ -159,7 +159,7 @@ namespace BossControll
         AntiRush.currentDay = EnvMan.instance.GetDay(ZNet.instance.GetTimeSeconds());
         Debug.Log((object) "UseItem debugging...");
         Debug.Log((object) string.Format("{0}<{1} && {2}=={3}?", (object) AntiRush.currentDay, (object) AntiRush.realDay, (object) __instance.m_name, (object) AntiRush.bosses[0]));
-        return !AntiRush.CheckBossAccess((string) __instance.m_name, __instance, user);
+        return AntiRush.isBossEnabled((string) __instance.m_name, __instance, user);
       }
     }
   }
