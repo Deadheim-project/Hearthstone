@@ -12,7 +12,7 @@ namespace Hearthstone
             {
                 if (item.m_shared.m_name == "Hearthstone")
                 {
-                    if (!Player.m_localPlayer.IsTeleportable())
+                    if (!Player.m_localPlayer.IsTeleportable() && !Hearthstone.allowTeleportWithoutRestriction.Value)
                     {
                         Player.m_localPlayer.Message(MessageHud.MessageType.Center, "You can't teleport carrying those items");
                         return false;
@@ -26,14 +26,12 @@ namespace Hearthstone
                         return false;
                     }
 
-                    Player.m_localPlayer.Message(MessageHud.MessageType.Center, "Você comeu o fruto do criador");
                     Player.m_localPlayer.TeleportTo(teleportPosition, Player.m_localPlayer.transform.rotation, true);
                 }
 
                 return true;
             }
         }
-
 
         [HarmonyPatch(typeof(Bed), "GetHoverText")]
         static class Bed_GetHoverText_Patch
@@ -42,19 +40,18 @@ namespace Hearthstone
             {
                 if (__instance.IsMine() && (___m_nview.GetZDO().GetLong("owner", 0L) != 0) || Traverse.Create(__instance).Method("IsCurrent").GetValue<bool>())
                 {
-                    __result += Localization.instance.Localize($"\n[{Hearthstone.modKey}+<color=yellow><b>$KEY_Use</b></color>] Set hearthstone");
+                    __result += Localization.instance.Localize($"\n[{Hearthstone.modKey.Value}+<color=yellow><b>$KEY_Use</b></color>] Set hearthstone");
                     return;
                 }
             }
         }
-
 
         [HarmonyPatch(typeof(Bed), "Interact")]
         static class Bed_Interact_Patch
         {
             static bool Prefix(Bed __instance, Humanoid human, bool repeat, ref bool __result, ZNetView ___m_nview)
             {                
-                if (__instance.IsMine() && Input.GetKey(Hearthstone.modKey.ToLower()) && (___m_nview.GetZDO().GetLong("owner", 0L) != 0))
+                if (__instance.IsMine() && Input.GetKey(Hearthstone.modKey.Value.ToLower()) && (___m_nview.GetZDO().GetLong("owner", 0L) != 0))
                 {
                     Hearthstone.SetHearthStonePosition();
                     Player.m_localPlayer.Message(MessageHud.MessageType.Center, "Here is your new hearthstone spawn");

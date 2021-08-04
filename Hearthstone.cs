@@ -1,4 +1,5 @@
 ﻿using BepInEx;
+using BepInEx.Configuration;
 using HarmonyLib;
 using Jotunn.Entities;
 using Jotunn.Managers;
@@ -13,14 +14,25 @@ namespace Hearthstone
     {
         public const string PluginGUID = "Detalhes.Hearthstone";
         Harmony harmony = new Harmony(PluginGUID);
-        public static Hearthstone context;
 
-        public static string modKey;
+        public static ConfigEntry<string> modKey;
+        public static ConfigEntry<int> nexusID;
+        public static ConfigEntry<int> resinCost;
+        public static ConfigEntry<int> coinsCost;
+        public static ConfigEntry<int> boneFragmentsCost;
+        public static ConfigEntry<bool> allowTeleportWithoutRestriction;
 
         private void Awake()
         {
-            context = this;
-            modKey = "left alt";
+            modKey = Config.Bind<string>("General", "ModKey", "left alt", "Modifier key to set hearthstone spawn. Use https://docs.unity3d.com/Manual/ConventionalGameInput.html");
+            nexusID = Config.Bind<int>("General", "NexusID", 1417, "Nexus mod ID for updates");
+
+            resinCost = Config.Bind<int>("General", "ResinCost", 10, "Resin cost");
+            coinsCost = Config.Bind<int>("General", "CoinsCost", 30, "Coins cost");
+            boneFragmentsCost = Config.Bind<int>("General", "BoneFragmentsCost", 10, "Bone Fragments cost");
+
+            allowTeleportWithoutRestriction = Config.Bind<bool>("General", "allowTeleportWithoutRestriction", false, "Allow teleport without restriction");
+
             harmony.PatchAll();
             LoadAssets();
         }
@@ -66,17 +78,17 @@ namespace Hearthstone
                 new Piece.Requirement()
                 {
                     m_resItem = PrefabManager.Cache.GetPrefab<ItemDrop>("Coins"),
-                    m_amount = 250
+                    m_amount = coinsCost.Value
                 },
                 new Piece.Requirement()
                 {
                     m_resItem = PrefabManager.Cache.GetPrefab<ItemDrop>("Resin"),
-                    m_amount = 30
+                    m_amount = resinCost.Value
                 },
                 new Piece.Requirement()
                 {
                     m_resItem = PrefabManager.Cache.GetPrefab<ItemDrop>("BoneFragments"),
-                    m_amount = 30
+                    m_amount = boneFragmentsCost.Value
                 }
             };
             CustomRecipe CR = new CustomRecipe(recipe, fixReference: false, fixRequirementReferences: false);
@@ -103,7 +115,8 @@ namespace Hearthstone
             if (!Player.m_localPlayer.m_knownTexts.ContainsKey("positionX"))
             {
                 Player.m_localPlayer.m_knownTexts.Add("positionX", Player.m_localPlayer.transform.position.x.ToString());
-            } else
+            } 
+            else
             {
                 Player.m_localPlayer.m_knownTexts["positionX"] = Player.m_localPlayer.transform.position.x.ToString();
             }
