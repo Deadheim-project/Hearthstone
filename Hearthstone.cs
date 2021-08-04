@@ -1,13 +1,8 @@
 ﻿using BepInEx;
-using BepInEx.Configuration;
 using HarmonyLib;
-using Jotunn.Configs;
 using Jotunn.Entities;
 using Jotunn.Managers;
-using Jotunn.Utils;
 using System;
-using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
 
 namespace Hearthstone
@@ -17,12 +12,16 @@ namespace Hearthstone
     public class Hearthstone : BaseUnityPlugin
     {
         public const string PluginGUID = "Detalhes.Hearthstone";
-        Harmony _Harmony = new Harmony("Detalhes.Hearthstone");
+        Harmony harmony = new Harmony(PluginGUID);
+        public static Hearthstone context;
 
+        public static string modKey;
 
         private void Awake()
         {
-            _Harmony.PatchAll();
+            context = this;
+            modKey = "left alt";
+            harmony.PatchAll();
             LoadAssets();
         }
 
@@ -58,7 +57,6 @@ namespace Hearthstone
 
         private void RecipeHearthStone(ItemDrop itemDrop)
         {
-            // Create and add a recipe for the copied item
             Recipe recipe = ScriptableObject.CreateInstance<Recipe>();
             recipe.name = "Recipe_Hearthstone";
             recipe.m_item = itemDrop;
@@ -68,28 +66,64 @@ namespace Hearthstone
                 new Piece.Requirement()
                 {
                     m_resItem = PrefabManager.Cache.GetPrefab<ItemDrop>("Coins"),
-                    m_amount = 999
+                    m_amount = 250
                 },
                 new Piece.Requirement()
                 {
-                    m_resItem = PrefabManager.Cache.GetPrefab<ItemDrop>("GreydwarfEye"),
-                    m_amount = 999
+                    m_resItem = PrefabManager.Cache.GetPrefab<ItemDrop>("Resin"),
+                    m_amount = 30
+                },
+                new Piece.Requirement()
+                {
+                    m_resItem = PrefabManager.Cache.GetPrefab<ItemDrop>("BoneFragments"),
+                    m_amount = 30
                 }
             };
             CustomRecipe CR = new CustomRecipe(recipe, fixReference: false, fixRequirementReferences: false);
             ItemManager.Instance.AddRecipe(CR);
         }
 
-        [HarmonyPatch(typeof(Player), "ConsumeItem")]
-        public static class ConsumePatch
+        unsafe public static Vector3 GetHearthStonePosition()
         {
-            private static void Postfix(ItemDrop.ItemData item)
+            if (!Player.m_localPlayer.m_knownTexts.ContainsKey("positionX"))
             {
-                Debug.Log(item.m_shared.m_name);
-                if (item.m_shared.m_name == "Hearthstone")
-                {
-                    Player.m_localPlayer.Message(MessageHud.MessageType.Center, "Você comeu o fruto do diabo");
-                }
+                return Vector3.zero;
+            }
+
+            return new Vector3
+            {
+                x = float.Parse(Player.m_localPlayer.m_knownTexts["positionX"]),
+                y = float.Parse(Player.m_localPlayer.m_knownTexts["positionY"]),
+                z = float.Parse(Player.m_localPlayer.m_knownTexts["positionZ"])
+            };
+        }
+
+        unsafe public static void SetHearthStonePosition()
+        {
+            if (!Player.m_localPlayer.m_knownTexts.ContainsKey("positionX"))
+            {
+                Player.m_localPlayer.m_knownTexts.Add("positionX", Player.m_localPlayer.transform.position.x.ToString());
+            } else
+            {
+                Player.m_localPlayer.m_knownTexts["positionX"] = Player.m_localPlayer.transform.position.x.ToString();
+            }
+
+            if (!Player.m_localPlayer.m_knownTexts.ContainsKey("positionY"))
+            {
+                Player.m_localPlayer.m_knownTexts.Add("positionY", Player.m_localPlayer.transform.position.y.ToString());
+            }
+            else
+            {
+                Player.m_localPlayer.m_knownTexts["positionY"] = Player.m_localPlayer.transform.position.y.ToString();
+            }
+
+            if (!Player.m_localPlayer.m_knownTexts.ContainsKey("positionZ"))
+            {
+                Player.m_localPlayer.m_knownTexts.Add("positionZ", Player.m_localPlayer.transform.position.z.ToString());
+            }
+            else
+            {
+                Player.m_localPlayer.m_knownTexts["positionZ"] = Player.m_localPlayer.transform.position.z.ToString();
             }
         }
     }
