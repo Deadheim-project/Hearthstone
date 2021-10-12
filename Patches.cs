@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using System;
 using UnityEngine;
 
 namespace Hearthstone
@@ -40,26 +41,9 @@ namespace Hearthstone
             {
                 if (__instance.IsMine() && (___m_nview.GetZDO().GetLong("owner", 0L) != 0) || Traverse.Create(__instance).Method("IsCurrent").GetValue<bool>())
                 {
-                    __result += Localization.instance.Localize($"\n[{Hearthstone.modKey.Value}+<color=yellow><b>$KEY_Use</b></color>] Set hearthstone");
-                    return;
+                    __result += Localization.instance.Localize($"\n[<color=yellow><b>P</b></color>] Set hearthstone");
                 }
             }
-        }
-
-        [HarmonyPatch(typeof(Bed), "Interact")]
-        static class Bed_Interact_Patch
-        {
-            static bool Prefix(Bed __instance, Humanoid human, bool repeat, ref bool __result, ZNetView ___m_nview)
-            {                
-                if (__instance.IsMine() && Input.GetKey(Hearthstone.modKey.Value.ToLower()) && (___m_nview.GetZDO().GetLong("owner", 0L) != 0))
-                {
-                    Hearthstone.SetHearthStonePosition();
-                    Player.m_localPlayer.Message(MessageHud.MessageType.Center, "Here is your new hearthstone spawn");
-                    return false;
-                }
-
-                return true;
-            }
-        }
+        }       
     }
 }

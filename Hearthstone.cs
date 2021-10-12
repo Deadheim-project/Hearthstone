@@ -8,33 +8,64 @@ using UnityEngine;
 
 namespace Hearthstone
 {
-    [BepInPlugin("Detalhes.Hearthstone", "Hearthstone", "1.0.0")]
+    [BepInPlugin("Detalhes.Hearthstone", "Hearthstone", "1.0.2")]
     [BepInProcess("valheim.exe")]
     public class Hearthstone : BaseUnityPlugin
     {
         public const string PluginGUID = "Detalhes.Hearthstone";
         Harmony harmony = new Harmony(PluginGUID);
 
-        public static ConfigEntry<string> modKey;
-        public static ConfigEntry<int> nexusID;
-        public static ConfigEntry<int> resinCost;
-        public static ConfigEntry<int> coinsCost;
-        public static ConfigEntry<int> boneFragmentsCost;
+        public static ConfigEntry<string> item1;
+        public static ConfigEntry<string> item2;
+        public static ConfigEntry<string> item3;
+        public static ConfigEntry<int> itemCost1;
+        public static ConfigEntry<int> itemCost2;
+        public static ConfigEntry<int> itemCost3;
         public static ConfigEntry<bool> allowTeleportWithoutRestriction;
 
         private void Awake()
         {
-            modKey = Config.Bind<string>("General", "ModKey", "left alt", "Modifier key to set hearthstone spawn. Use https://docs.unity3d.com/Manual/ConventionalGameInput.html");
-            nexusID = Config.Bind<int>("General", "NexusID", 1417, "Nexus mod ID for updates");
 
-            resinCost = Config.Bind<int>("General", "ResinCost", 10, "Resin cost");
-            coinsCost = Config.Bind<int>("General", "CoinsCost", 30, "Coins cost");
-            boneFragmentsCost = Config.Bind<int>("General", "BoneFragmentsCost", 10, "Bone Fragments cost");
+            item1 = Config.Bind<string>("General", "RecipeItem1", "BoneFragments", "Recipe item 1");
+            item2 = Config.Bind<string>("General", "RecipeItem2", "Coins", "Recipe item 2");
+            item3 = Config.Bind<string>("General", "RecipeItem3", "Crystal", "Recipe item 3");
+
+            itemCost1 = Config.Bind<int>("General", "itemCost1", 10, "Recipe item 1 cost");
+            itemCost2 = Config.Bind<int>("General", "Itemcost2", 30, "Recipe item 2 cost");
+            itemCost3 = Config.Bind<int>("General", "itemCost3", 3, "Recipe item 3 cost");
 
             allowTeleportWithoutRestriction = Config.Bind<bool>("General", "allowTeleportWithoutRestriction", false, "Allow teleport without restriction");
 
             harmony.PatchAll();
             LoadAssets();
+        }
+
+        private void Update()
+        {
+            Player __instance = Player.m_localPlayer;
+
+            if (Player.m_localPlayer is null) return;
+
+            if (__instance.m_hovering)
+            {
+                Interactable componentInParent = __instance.m_hovering.GetComponentInParent<Interactable>();
+                if (componentInParent != null)
+                {
+                    if (componentInParent is Bed)
+                    {
+                        Bed bed = (Bed)componentInParent;
+
+                        if (bed.IsMine())
+                        {
+                            if (Input.GetKeyDown(KeyCode.P))
+                            {
+                                Hearthstone.SetHearthStonePosition();
+                                Player.m_localPlayer.Message(MessageHud.MessageType.Center, "Here is your new Hearthstone spawn", 0, null);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         private void LoadAssets()
@@ -77,18 +108,18 @@ namespace Hearthstone
             {
                 new Piece.Requirement()
                 {
-                    m_resItem = PrefabManager.Cache.GetPrefab<ItemDrop>("Coins"),
-                    m_amount = coinsCost.Value
+                    m_resItem = PrefabManager.Cache.GetPrefab<ItemDrop>(item1.Value),
+                    m_amount = itemCost1.Value
                 },
                 new Piece.Requirement()
                 {
-                    m_resItem = PrefabManager.Cache.GetPrefab<ItemDrop>("Resin"),
-                    m_amount = resinCost.Value
+                    m_resItem = PrefabManager.Cache.GetPrefab<ItemDrop>(item2.Value),
+                    m_amount = itemCost2.Value
                 },
                 new Piece.Requirement()
                 {
-                    m_resItem = PrefabManager.Cache.GetPrefab<ItemDrop>("BoneFragments"),
-                    m_amount = boneFragmentsCost.Value
+                    m_resItem = PrefabManager.Cache.GetPrefab<ItemDrop>(item3.Value),
+                    m_amount = itemCost3.Value
                 }
             };
             CustomRecipe CR = new CustomRecipe(recipe, fixReference: false, fixRequirementReferences: false);
