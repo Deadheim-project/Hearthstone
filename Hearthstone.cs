@@ -1,174 +1,167 @@
-﻿using BepInEx;
+﻿using System;
+using System.Collections.Generic;
+using BepInEx;
 using BepInEx.Configuration;
 using HarmonyLib;
-using Jotunn.Entities;
-using Jotunn.Managers;
-using System;
+using ItemManager;
+using ServerSync;
 using UnityEngine;
 
 namespace Hearthstone
 {
-    [BepInPlugin("Detalhes.Hearthstone", "Hearthstone", "1.0.2")]
-    [BepInProcess("valheim.exe")]
-    public class Hearthstone : BaseUnityPlugin
-    {
-        public const string PluginGUID = "Detalhes.Hearthstone";
-        Harmony harmony = new Harmony(PluginGUID);
+	[BepInPlugin("Detalhes.Hearthstone", "Hearthstone", "2.0.3")]
+	public class Hearthstone : BaseUnityPlugin
+	{
+		private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description, bool synchronizedSetting = true)
+		{
+			ConfigEntry<T> configEntry = base.Config.Bind<T>(group, name, value, description);
+			SyncedConfigEntry<T> syncedConfigEntry = this.configSync.AddConfigEntry<T>(configEntry);
+			syncedConfigEntry.SynchronizedConfig = synchronizedSetting;
+			return configEntry;
+		}
 
-        public static ConfigEntry<string> item1;
-        public static ConfigEntry<string> item2;
-        public static ConfigEntry<string> item3;
-        public static ConfigEntry<int> itemCost1;
-        public static ConfigEntry<int> itemCost2;
-        public static ConfigEntry<int> itemCost3;
-        public static ConfigEntry<bool> allowTeleportWithoutRestriction;
+		private ConfigEntry<T> config<T>(string group, string name, T value, string description, bool synchronizedSetting = true)
+		{
+			return this.config<T>(group, name, value, new ConfigDescription(description, null, Array.Empty<object>()), synchronizedSetting);
+		}
 
-        private void Awake()
-        {
+		private void Awake()
+		{
+			Hearthstone.allowTeleportWithoutRestriction = this.config<bool>("General", "allowTeleportWithoutRestriction", false, "Allow teleport without restriction", true);
+			Item item = new Item("hearthstone", "Hearthstone", "assets");
+			item.RequiredItems.Add("Crystal", 3);
+			item.RequiredItems.Add("Coins", 30);
+			item.RequiredItems.Add("BoneFragments", 20);
+			item.Crafting.Add(CraftingTable.ArtisanTable, 1);
+			this.harmony.PatchAll();
+		}
 
-            item1 = Config.Bind<string>("General", "RecipeItem1", "BoneFragments", "Recipe item 1");
-            item2 = Config.Bind<string>("General", "RecipeItem2", "Coins", "Recipe item 2");
-            item3 = Config.Bind<string>("General", "RecipeItem3", "Crystal", "Recipe item 3");
+		private void Update()
+		{
+			Player localPlayer = Player.m_localPlayer;
+			bool flag = Player.m_localPlayer == null;
+			if (!flag)
+			{
+				bool flag2 = localPlayer.m_hovering;
+				if (flag2)
+				{
+					Interactable componentInParent = localPlayer.m_hovering.GetComponentInParent<Interactable>();
+					bool flag3 = componentInParent != null;
+					if (flag3)
+					{
+						bool flag4 = componentInParent is Bed;
+						if (flag4)
+						{
+							Bed bed = (Bed)componentInParent;
+							bool flag5 = bed.IsMine();
+							if (flag5)
+							{
+								bool keyDown = Input.GetKeyDown(KeyCode.P);
+								if (keyDown)
+								{
+									Hearthstone.SetHearthStonePosition();
+									Player.m_localPlayer.Message(MessageHud.MessageType.Center, "Here is your new Hearthstone spawn", 0, null);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
 
-            itemCost1 = Config.Bind<int>("General", "itemCost1", 10, "Recipe item 1 cost");
-            itemCost2 = Config.Bind<int>("General", "Itemcost2", 30, "Recipe item 2 cost");
-            itemCost3 = Config.Bind<int>("General", "itemCost3", 3, "Recipe item 3 cost");
+		public static Vector3 GetHearthStonePosition()
+		{
+			bool flag = !Player.m_localPlayer.m_knownTexts.ContainsKey("positionX");
+			Vector3 result;
+			if (flag)
+			{
+				result = Vector3.zero;
+			}
+			else
+			{
+				Vector3 vector = default(Vector3);
+				vector.x = float.Parse(Player.m_localPlayer.m_knownTexts["positionX"]);
+				vector.y = float.Parse(Player.m_localPlayer.m_knownTexts["positionY"]);
+				vector.z = float.Parse(Player.m_localPlayer.m_knownTexts["positionZ"]);
+				result = vector;
+			}
+			return result;
+		}
 
-            allowTeleportWithoutRestriction = Config.Bind<bool>("General", "allowTeleportWithoutRestriction", false, "Allow teleport without restriction");
+		public static void SetHearthStonePosition()
+		{
+			bool flag = !Player.m_localPlayer.m_knownTexts.ContainsKey("positionX");
+			if (flag)
+			{
+				Dictionary<string, string> knownTexts = Player.m_localPlayer.m_knownTexts;
+				string key = "positionX";
+				Vector3 position = Player.m_localPlayer.transform.position;
+				knownTexts.Add(key, position.x.ToString());
+			}
+			else
+			{
+				Dictionary<string, string> knownTexts2 = Player.m_localPlayer.m_knownTexts;
+				string key2 = "positionX";
+				Vector3 position = Player.m_localPlayer.transform.position;
+				knownTexts2[key2] = position.x.ToString();
+			}
+			bool flag2 = !Player.m_localPlayer.m_knownTexts.ContainsKey("positionY");
+			if (flag2)
+			{
+				Dictionary<string, string> knownTexts3 = Player.m_localPlayer.m_knownTexts;
+				string key3 = "positionY";
+				Vector3 position = Player.m_localPlayer.transform.position;
+				knownTexts3.Add(key3, position.y.ToString());
+			}
+			else
+			{
+				Dictionary<string, string> knownTexts4 = Player.m_localPlayer.m_knownTexts;
+				string key4 = "positionY";
+				Vector3 position = Player.m_localPlayer.transform.position;
+				knownTexts4[key4] = position.y.ToString();
+			}
+			bool flag3 = !Player.m_localPlayer.m_knownTexts.ContainsKey("positionZ");
+			if (flag3)
+			{
+				Dictionary<string, string> knownTexts5 = Player.m_localPlayer.m_knownTexts;
+				string key5 = "positionZ";
+				Vector3 position = Player.m_localPlayer.transform.position;
+				knownTexts5.Add(key5, position.z.ToString());
+			}
+			else
+			{
+				Dictionary<string, string> knownTexts6 = Player.m_localPlayer.m_knownTexts;
+				string key6 = "positionZ";
+				Vector3 position = Player.m_localPlayer.transform.position;
+				knownTexts6[key6] = position.z.ToString();
+			}
+		}
 
-            harmony.PatchAll();
-            LoadAssets();
-        }
+		public const string PluginGUID = "Detalhes.Hearthstone";
 
-        private void Update()
-        {
-            Player __instance = Player.m_localPlayer;
+		public const string Version = "2.0.1";
 
-            if (Player.m_localPlayer is null) return;
+		private Harmony harmony = new Harmony("Detalhes.Hearthstone");
 
-            if (__instance.m_hovering)
-            {
-                Interactable componentInParent = __instance.m_hovering.GetComponentInParent<Interactable>();
-                if (componentInParent != null)
-                {
-                    if (componentInParent is Bed)
-                    {
-                        Bed bed = (Bed)componentInParent;
+		public static ConfigEntry<string> item1;
 
-                        if (bed.IsMine())
-                        {
-                            if (Input.GetKeyDown(KeyCode.P))
-                            {
-                                Hearthstone.SetHearthStonePosition();
-                                Player.m_localPlayer.Message(MessageHud.MessageType.Center, "Here is your new Hearthstone spawn", 0, null);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+		public static ConfigEntry<string> item2;
 
-        private void LoadAssets()
-        {
-            ItemManager.OnVanillaItemsAvailable += AddClonedItems;
-        }
+		public static ConfigEntry<string> item3;
 
-        private void AddClonedItems()
-        {
-            try
-            {
-                CustomItem CI = new CustomItem("Hearthstone", "YagluthDrop");
-                ItemManager.Instance.AddItem(CI);
+		public static ConfigEntry<int> itemCost1;
 
-                ItemDrop itemDrop = CI.ItemDrop;
-                itemDrop.m_itemData.m_shared.m_name = "Hearthstone";
-                itemDrop.m_itemData.m_shared.m_description = "Go back home!";
-                itemDrop.m_itemData.m_shared.m_maxStackSize = 1;
-                itemDrop.m_itemData.m_shared.m_itemType = ItemDrop.ItemData.ItemType.Consumable;
+		public static ConfigEntry<int> itemCost2;
 
-                RecipeHearthStone(itemDrop);
-            }
-            catch (Exception ex)
-            {
-                Jotunn.Logger.LogError($"Error while adding cloned item: {ex.Message}");
-            }
-            finally
-            {
-                ItemManager.OnVanillaItemsAvailable -= AddClonedItems;
-            }
-        }
+		public static ConfigEntry<int> itemCost3;
 
-        private void RecipeHearthStone(ItemDrop itemDrop)
-        {
-            Recipe recipe = ScriptableObject.CreateInstance<Recipe>();
-            recipe.name = "Recipe_Hearthstone";
-            recipe.m_item = itemDrop;
-            recipe.m_craftingStation = PrefabManager.Cache.GetPrefab<CraftingStation>("piece_workbench");
-            recipe.m_resources = new Piece.Requirement[]
-            {
-                new Piece.Requirement()
-                {
-                    m_resItem = PrefabManager.Cache.GetPrefab<ItemDrop>(item1.Value),
-                    m_amount = itemCost1.Value
-                },
-                new Piece.Requirement()
-                {
-                    m_resItem = PrefabManager.Cache.GetPrefab<ItemDrop>(item2.Value),
-                    m_amount = itemCost2.Value
-                },
-                new Piece.Requirement()
-                {
-                    m_resItem = PrefabManager.Cache.GetPrefab<ItemDrop>(item3.Value),
-                    m_amount = itemCost3.Value
-                }
-            };
-            CustomRecipe CR = new CustomRecipe(recipe, fixReference: false, fixRequirementReferences: false);
-            ItemManager.Instance.AddRecipe(CR);
-        }
+		public static ConfigEntry<bool> allowTeleportWithoutRestriction;
 
-        unsafe public static Vector3 GetHearthStonePosition()
-        {
-            if (!Player.m_localPlayer.m_knownTexts.ContainsKey("positionX"))
-            {
-                return Vector3.zero;
-            }
-
-            return new Vector3
-            {
-                x = float.Parse(Player.m_localPlayer.m_knownTexts["positionX"]),
-                y = float.Parse(Player.m_localPlayer.m_knownTexts["positionY"]),
-                z = float.Parse(Player.m_localPlayer.m_knownTexts["positionZ"])
-            };
-        }
-
-        unsafe public static void SetHearthStonePosition()
-        {
-            if (!Player.m_localPlayer.m_knownTexts.ContainsKey("positionX"))
-            {
-                Player.m_localPlayer.m_knownTexts.Add("positionX", Player.m_localPlayer.transform.position.x.ToString());
-            } 
-            else
-            {
-                Player.m_localPlayer.m_knownTexts["positionX"] = Player.m_localPlayer.transform.position.x.ToString();
-            }
-
-            if (!Player.m_localPlayer.m_knownTexts.ContainsKey("positionY"))
-            {
-                Player.m_localPlayer.m_knownTexts.Add("positionY", Player.m_localPlayer.transform.position.y.ToString());
-            }
-            else
-            {
-                Player.m_localPlayer.m_knownTexts["positionY"] = Player.m_localPlayer.transform.position.y.ToString();
-            }
-
-            if (!Player.m_localPlayer.m_knownTexts.ContainsKey("positionZ"))
-            {
-                Player.m_localPlayer.m_knownTexts.Add("positionZ", Player.m_localPlayer.transform.position.z.ToString());
-            }
-            else
-            {
-                Player.m_localPlayer.m_knownTexts["positionZ"] = Player.m_localPlayer.transform.position.z.ToString();
-            }
-        }
-    }
+		private ConfigSync configSync = new ConfigSync("Detalhes.Hearthstone")
+		{
+			DisplayName = "Hearthstone",
+			CurrentVersion = "2.0.1",
+			MinimumRequiredVersion = "2.0.1"
+		};
+	}
 }
