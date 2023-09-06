@@ -11,7 +11,7 @@ namespace Hearthstone
         {
             private static bool Prefix(ItemDrop.ItemData item)
             {
-                if (item.m_shared.m_name == "Hearthstone")
+                if (item.m_shared.m_name.Equals("$item_Hearthstone"))
                 {
                     if (!Player.m_localPlayer.IsTeleportable() && !Hearthstone.allowTeleportWithoutRestriction.Value)
                     {

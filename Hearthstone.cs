@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace Hearthstone
 {
-	[BepInPlugin("Detalhes.Hearthstone", "Hearthstone", "2.0.3")]
+	[BepInPlugin("Detalhes.Hearthstone", "Hearthstone", "2.0.4")]
 	public class Hearthstone : BaseUnityPlugin
 	{
 		private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description, bool synchronizedSetting = true)
@@ -32,6 +32,8 @@ namespace Hearthstone
 			item.RequiredItems.Add("Crystal", 3);
 			item.RequiredItems.Add("Coins", 30);
 			item.RequiredItems.Add("BoneFragments", 20);
+			item.Name.English("Hearthstone"); // You can use this to fix the display name in code
+			item.Description.English("Brings you back home.");
 			item.Crafting.Add(CraftingTable.ArtisanTable, 1);
 			this.harmony.PatchAll();
 		}
@@ -139,7 +141,7 @@ namespace Hearthstone
 
 		public const string PluginGUID = "Detalhes.Hearthstone";
 
-		public const string Version = "2.0.1";
+		public const string Version = "2.0.4";
 
 		private Harmony harmony = new Harmony("Detalhes.Hearthstone");
 
@@ -160,8 +162,8 @@ namespace Hearthstone
 		private ConfigSync configSync = new ConfigSync("Detalhes.Hearthstone")
 		{
 			DisplayName = "Hearthstone",
-			CurrentVersion = "2.0.1",
-			MinimumRequiredVersion = "2.0.1"
+			CurrentVersion = "2.0.4",
+			MinimumRequiredVersion = "2.0.4"
 		};
 	}
 }
