@@ -1,0 +1,57 @@
+name: Release
+
+# Publica o zip de dist/ como release, para o Deadheim Launcher baixar.
+#
+# Interino: a DLL vem pre-compilada em dist/ porque este mod referencia
+# assemblies do Valheim por caminho absoluto, e o runner do GitHub nao tem o
+# jogo instalado - nao da para compilar aqui. Quando o csproj usar referencias
+# resolviveis, este workflow passa a compilar em vez de empacotar.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Tag do release (ex. v1.0.0)"
+        required: true
+        default: "v1.0.0"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Definir a tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "valor=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "valor=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Conferir que existe zip
+        run: |
+          if ! ls dist/*.zip >/dev/null 2>&1; then
+            echo "nenhum zip em dist/" >&2
+            exit 1
+          fi
+          ls -la dist/
+
+      - name: Publicar o release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ steps.tag.outputs.valor }}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/*.zip --clobber
+          else
+            gh release create "$tag" dist/*.zip \
+              --title "$GITHUB_REPOSITORY_OWNER ${tag}" \
+              --notes "Build para o Deadheim Launcher."
+          fi
